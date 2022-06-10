@@ -1,0 +1,39 @@
+version: '3.7'
+services:
+  meilisearch:
+    container_name: meilisearch
+    image: 'getmeili/meilisearch:v{{ meili_version }}'
+    ports:
+      - '7700'
+    volumes:
+      - 'meilisearch_data:/data.ms'
+    networks:
+      - proxy
+    environment:
+      MEILI_ENV: production
+      MEILI_HTTP_ADDR: {{ meili_http_addr }}
+      MEILI_MASTER_KEY: {{ lookup('env', 'MEILI_MASTER_KEY') }}
+      MEILI_NO_ANALYTICS: ''
+      MEILI_DUMPS_DIR: {{ meili_dumps_dir }}
+      MEILI_LOG_LEVEL: {{ meili_log_level }}
+      MEILI_MAX_INDEX_SIZE: '{{ meili_max_index_size }}'
+      MEILI_MAX_INDEXING_MEMORY: '{{ meili_max_indexing_memory }}'
+      MEILI_MAX_INDEXING_THREADS: {{ meili_max_indexing_threads }}
+      MEILI_MAX_TASK_DB_SIZE: '{{ meili_max_task_db_size }}'
+      MEILI_HTTP_PAYLOAD_SIZE_LIMIT: '{{ meili_http_payload_size_limit }}'
+{% if meili_schedule_snapshot %}
+      MEILI_SCHEDULE_SNAPSHOT: ''
+      MEILI_SNAPSHOT_DIR: {{ meili_snapshot_dir }}
+      MEILI_SNAPSHOT_interval: {{ meili_snapshot_interval }}
+{% endif %}
+    logging:
+      options:
+        max-size: '10k'
+        max-file: '5'
+
+volumes:
+  meilisearch_data:
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,81 @@
+---
+- name: Create directories
+  file:
+    state: directory
+    path: "{{ item }}"
+    mode: 0755
+  with_items:
+    - /opt/docker-compose-service/meilisearch
+
+- name: Put docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/docker-compose-service/meilisearch/docker-compose.yml
+  notify: Restart meilisearch
+
+- name: Start meilisearch
+  systemd:
+    name: docker-compose-service@meilisearch
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Delete caddy conf
+  uri:
+    url: http://localhost:2019/id/{{ meili_host }}/
+    method: DELETE
+    headers:
+      Content-Type: application/json
+      Origin: http://localhost:2019
+    status_code:
+      - 200
+      - 404
+
+- name: Update caddy
+  uri:
+    url: http://localhost:2019/config/apps/http/servers/{{ caddy_servername }}/routes/
+    method: POST
+    headers:
+      Content-Type: application/json
+      Origin: http://localhost:2019
+    return_content: yes
+    status_code: 200
+    body_format: json
+    body: |
+      {
+        "@id": "{{ meili_host }}",
+        "match": [
+          {
+            "host": [
+              "{{ meili_host }}"
+            ]
+          }
+        ],
+        "handle": [
+          {
+            "handler": "subroute",
+            "routes": [
+              {
+                "match": [
+                  {
+                    "path": [
+                      "/*"
+                    ]
+                  }
+                ],
+                "handle": [
+                  {
+                    "handler": "reverse_proxy",
+                    "upstreams": [
+                      {
+                        "dial": "meilisearch:7700"
+                      }
+                    ]
+                  }
+                ]
+              },
+            ]
+          }
+        ],
+        "terminal": true
+      }
