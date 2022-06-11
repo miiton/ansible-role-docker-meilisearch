@@ -10,6 +10,6 @@ meili_max_indexing_memory: 2Gb
 meili_max_indexing_threads: 2
 meili_max_task_db_size: 8Gb
 meili_http_payload_size_limit: 20Mb
-meili_schedule_snapshot: false
+meili_schedule_snapshot: true
 meili_snapshot_dir: snapshots/
 meili_snapshot_interval: 86400
